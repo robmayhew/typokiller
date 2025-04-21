@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Patch Review App',
-  description: 'Read and listen to patch files',
+  title: 'Typo Killer',
+  description: 'Have your patch files read aloud to catch typos before you commit.',
 }
 
 export default function RootLayout({
