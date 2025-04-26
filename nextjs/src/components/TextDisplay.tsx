@@ -1,7 +1,7 @@
 'use client'
 
 import {useEffect, useRef, useState} from 'react'
-import {fetchModel, Line, ReadingModel, Token} from '@/lib/readingModel'
+import {fetchModel, Line, TextModel} from '@/lib/readingModel'
 
 interface TextDisplayProps {
     content: string
@@ -12,12 +12,13 @@ interface TextDisplayProps {
 export default function TextDisplay({content, language, mode}: TextDisplayProps) {
     const [isSpeaking, setIsSpeaking] = useState(false)
     const [currentLineIndex, setCurrentLineIndex] = useState<number>(0)
+    const [currentTokenInLineIndex, setCurrentTokenInLineIndex] = useState<number>(-1)
     const [rate, setRate] = useState<number>(1)
 
-    let model: ReadingModel = fetchModel(language, mode)
+    let model: TextModel = fetchModel(language, mode)
     const lines: Line[] = model.tokenize(content, mode)
 
-    let flatTokens: Token[] = []
+
     let currentCharIndex = 0
     const linesForSpeech: string[] = []
 
@@ -25,14 +26,19 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
         let lineForSpeech = ''
         line.lineTokens.forEach((token) => {
             token.speechCharStart = currentCharIndex
-            flatTokens.push(token)
-
-            if (token.text.length === 1) {
-                lineForSpeech += token.text
-                currentCharIndex += 1
-            } else {
-                lineForSpeech += ' ' + token.text + ' '
-                currentCharIndex += token.text.length + 2
+            if(token.spoken) {
+                if(token.replacement)
+                {
+                    lineForSpeech += ' ' + token.replacement  + ' ';
+                }else {
+                    if (token.text.length === 1) {
+                        lineForSpeech += token.text
+                        currentCharIndex += 1
+                    } else {
+                        lineForSpeech += ' ' + token.text + ' '
+                        currentCharIndex += token.text.length + 2
+                    }
+                }
             }
         })
         linesForSpeech.push(lineForSpeech.trim())
@@ -58,9 +64,22 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                 lineIndexRef.current += 1
                 console.log(`Current line changed to ${lineIndexRef.current}`);
                 setCurrentLineIndex(lineIndexRef.current)
+                // Move to next line
+
+                setCurrentTokenInLineIndex(-1);
                 console.log(`About to speak current line ${currentLineIndex}`);
                 speakCurrentLine()
            // }
+        }
+
+        utterance.onboundary = (event) =>{
+            if (event.name === 'word') {
+                // For the current line find the next index to be spoken.
+                setCurrentTokenInLineIndex(prev => {
+
+                    return model.nextSpokenToken(currentLineIndex, prev);
+                });
+            }
         }
 
         utteranceRef.current = utterance
@@ -95,6 +114,11 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
             window.speechSynthesis.cancel()
         }
     }, [])
+
+    // New file has been added, reset to start again
+    useEffect(() => {
+       setCurrentLineIndex(0)
+    }, [content]);
 
     return (
         <div className="w-full">
@@ -142,10 +166,23 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                             {lines.map((line, lineIdx) => (
                                 <div key={lineIdx}>
                                     {line.lineTokens.map((token, tokenIdx) => {
+                                        let styleClasses = [];
+                                        styleClasses.push('mr-1');
+                                        if(lineIdx === currentLineIndex)
+                                        {
+                                            //styleClasses.push('bg-yellow-300 dark:bg-yellow-600')
+                                            if(tokenIdx === currentTokenInLineIndex)
+                                            {
+                                                console.log(`tokeIdx ${tokenIdx} === ${currentTokenInLineIndex} text ${token.text}`)
+                                                styleClasses.push('bg-red-300');
+                                            }
+                                        }
+
+
                                         return (
                                             <span
                                                 key={tokenIdx}
-                                                className={`mr-1 ${lineIdx === currentLineIndex ? 'bg-yellow-300 dark:bg-yellow-600' : token.type === 'keyword' ? 'text-purple-600 dark:text-purple-400 font-bold' : ''}`}
+                                                className={styleClasses.join(' ')}
                                             >
                                                 {token.text}
                                             </span>
