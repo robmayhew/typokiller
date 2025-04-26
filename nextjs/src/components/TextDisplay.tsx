@@ -181,8 +181,8 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                                 <div key={lineIdx}>
                                     {line.lineTokens.map((token, tokenIdx) => {
                                         let styleClasses = [];
-                                        if(token.spoken)
-                                            styleClasses.push('mr-2');
+                                        if(token.whiteSpace)
+                                            styleClasses.push('mr-1');
                                         if(lineIdx === currentLineIndex)
                                         {
                                             //styleClasses.push('bg-yellow-300 dark:bg-yellow-600')

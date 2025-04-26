@@ -13,7 +13,8 @@ export type Token = {
     spoken:boolean,
     start: number,
     end: number,
-    speechCharStart: number
+    speechCharStart: number,
+    whiteSpace: boolean
 }
 
 function extractAdditions(patch: string): string {
@@ -68,7 +69,8 @@ export class TextModel implements ReadingModel {
                 text: match[0],
                 start: match.index,
                 end: match.index + match[0].length,
-                speechCharStart:-1
+                speechCharStart:-1,
+                whiteSpace:false
             });
         }
         return tokens;
@@ -97,7 +99,7 @@ export class TextModel implements ReadingModel {
 export class JavaModel extends TextModel {
     tokenizeLine(lineText: string): Token[] {
         //const regex = /String|=|;|"|[A-Za-z0-9_]+/g;
-        const regex = /String|=|;|\(|\)|"|\.|[A-Za-z0-9_]+/g;
+        const regex = /String|=|;|\(|\)|"|\.|\s+|[A-Za-z0-9_]+/g;
         const result: Token[] = [];
         let match: RegExpExecArray | null;
 
@@ -108,8 +110,14 @@ export class JavaModel extends TextModel {
             const speechCharStart = -1;
             let replacement: string | null = null;
             let spoken = true;
+            let whiteSpace = false;
 
-            if (tokenText === '=') {
+            if(/\s+/.test(tokenText))
+            {
+                spoken = false;
+                whiteSpace = true;
+            }
+            else if (tokenText === '=') {
                 replacement = 'equals';
             } else if (tokenText === '"'
                 || tokenText === ';'
@@ -120,7 +128,7 @@ export class JavaModel extends TextModel {
                 spoken = false;
             }
 
-            result.push({ text: tokenText, replacement, spoken, start, end,speechCharStart });
+            result.push({ text: tokenText, replacement, spoken, start, end,speechCharStart, whiteSpace });
         }
        return result;
 
