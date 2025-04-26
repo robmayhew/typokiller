@@ -109,6 +109,13 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
         if (isSpeaking) speakCurrentLine()
     }
 
+    const resetToStart = () =>{
+        setIsSpeaking(false);
+        setCurrentLineIndex(0);
+        setCurrentTokenInLineIndex(-1)
+        window.speechSynthesis.cancel();
+    }
+
     useEffect(() => {
         return () => {
             window.speechSynthesis.cancel()
@@ -145,6 +152,13 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                             >
                                 ▶ Next Line
                             </button>
+                            <button
+                                onClick={() => resetToStart()}
+                                className="px-3 py-1 bg-amber-800 hover:bg-blue-500 text-white rounded"
+
+                            >
+                                Reset
+                            </button>
                         </div>
                     </div>
 
@@ -167,7 +181,8 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                                 <div key={lineIdx}>
                                     {line.lineTokens.map((token, tokenIdx) => {
                                         let styleClasses = [];
-                                        styleClasses.push('mr-1');
+                                        if(token.spoken)
+                                            styleClasses.push('mr-2');
                                         if(lineIdx === currentLineIndex)
                                         {
                                             //styleClasses.push('bg-yellow-300 dark:bg-yellow-600')
