@@ -1,4 +1,5 @@
 export const supportedPatchLanguages = {
+    TEXT:'Text',
     JAVASCRIPT:'JavaScript',
     JAVA:'Java'
 } as const

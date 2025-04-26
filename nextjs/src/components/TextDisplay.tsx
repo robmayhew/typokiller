@@ -18,7 +18,6 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
     let model: TextModel = fetchModel(language, mode)
     const lines: Line[] = model.tokenize(content, mode)
 
-
     let currentCharIndex = 0
     const linesForSpeech: string[] = []
 
@@ -49,7 +48,6 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
 
     const speakCurrentLine = () => {
         if (lineIndexRef.current >= linesForSpeech.length) {
-            console.log(`No longer speaking ${lineIndexRef.current} >= ${linesForSpeech.length}`)
             setIsSpeaking(false)
             return
         }
@@ -58,16 +56,13 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.rate = rate
         utterance.onend = () => {
-            console.log(`Ended. Is speaking ${isSpeaking}`);
             // TODO: Why??? this should be in sync?
             //if (isSpeaking) {
                 lineIndexRef.current += 1
-                console.log(`Current line changed to ${lineIndexRef.current}`);
                 setCurrentLineIndex(lineIndexRef.current)
                 // Move to next line
 
                 setCurrentTokenInLineIndex(-1);
-                console.log(`About to speak current line ${currentLineIndex}`);
                 speakCurrentLine()
            // }
         }
@@ -106,7 +101,10 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
         const newIndex = Math.max(0, Math.min(linesForSpeech.length - 1, currentLineIndex + offset))
         lineIndexRef.current = newIndex
         setCurrentLineIndex(newIndex)
-        if (isSpeaking) speakCurrentLine()
+        setCurrentTokenInLineIndex(-1)
+        if (isSpeaking){
+            speakCurrentLine()
+        }
     }
 
     const resetToStart = () =>{
@@ -155,7 +153,6 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                             <button
                                 onClick={() => resetToStart()}
                                 className="px-3 py-1 bg-amber-800 hover:bg-blue-500 text-white rounded"
-
                             >
                                 Reset
                             </button>
@@ -188,7 +185,6 @@ export default function TextDisplay({content, language, mode}: TextDisplayProps)
                                             //styleClasses.push('bg-yellow-300 dark:bg-yellow-600')
                                             if(tokenIdx === currentTokenInLineIndex)
                                             {
-                                                console.log(`tokeIdx ${tokenIdx} === ${currentTokenInLineIndex} text ${token.text}`)
                                                 styleClasses.push('bg-red-300');
                                             }
                                         }

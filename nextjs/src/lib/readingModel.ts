@@ -53,6 +53,7 @@ export class TextModel implements ReadingModel {
         if(mode === supportedReadModes.ADDITIONS_ONLY) {
             content = extractAdditions(content);
         }
+
         this._lines = this.tokenizeLines(content);
         return this._lines;
     }
@@ -64,7 +65,7 @@ export class TextModel implements ReadingModel {
 
         while ((match = regex.exec(lineText)) !== null) {
             tokens.push({
-                spoken: false,
+                spoken: true,
                 replacement: "",
                 text: match[0],
                 start: match.index,
@@ -78,20 +79,23 @@ export class TextModel implements ReadingModel {
 
     tokenizeLines(input: string): Line[] {
         const lines = input.split('\n');
-        return lines.map((line, index) => ({
-            lineNumber: index + 1, lineTokens: this.tokenizeLine(line)
-        }));
+        return lines.map((line, index) => {
+            return{ lineNumber: index + 1, lineTokens: this.tokenizeLine(line)}
+        });
+
     }
 
     nextSpokenToken(currentLine:number, currentToken:number)
     {
         const tokens = this._lines[currentLine].lineTokens;
-
+        console.log(`Current line ${currentLine} currentToken ${currentToken}`)
         for(let i = 0; i < tokens.length; i++)
         {
+            console.log(`Spoken ${tokens[i].spoken} i = ${i}`);
             if(tokens[i].spoken && i > currentToken)
                 return i;
         }
+        console.log('Returning curren token');
         return currentToken;
     }
 }
@@ -99,7 +103,7 @@ export class TextModel implements ReadingModel {
 export class JavaModel extends TextModel {
     tokenizeLine(lineText: string): Token[] {
         //const regex = /String|=|;|"|[A-Za-z0-9_]+/g;
-        const regex = /String|=|;|\(|\)|"|\.|\s+|[A-Za-z0-9_]+/g;
+        const regex = /String|=|\/|\\|;|\(|\)|"|\.|\s+|[A-Za-z0-9_]+/g;
         const result: Token[] = [];
         let match: RegExpExecArray | null;
 
@@ -119,36 +123,29 @@ export class JavaModel extends TextModel {
             }
             else if (tokenText === '=') {
                 replacement = 'equals';
+
             } else if (tokenText === '"'
                 || tokenText === ';'
                 || tokenText === '.'
                 || tokenText === '('
                 || tokenText === ')'
+                || tokenText === '/'
+                || tokenText === '\\'
             ) {
                 spoken = false;
             }
 
-            result.push({ text: tokenText, replacement, spoken, start, end,speechCharStart, whiteSpace });
+            if(whiteSpace)
+            {
+                if(result.length ==0 || (!result[result.length-1].whiteSpace))
+                {
+                    result.push({ text: tokenText, replacement, spoken, start, end,speechCharStart, whiteSpace });
+                }
+            }else{
+                result.push({ text: tokenText, replacement, spoken, start, end,speechCharStart, whiteSpace });
+            }
         }
        return result;
-
-
-        // const tokens = lineText.match(/String|=|;|"|[A-Za-z0-9_]+/g) || [];
-        //
-        //
-        //
-        //
-        // const result:Token[] = tokens.map(tokenString => {
-        //     if (tokenString === '=') {
-        //         return { text: tokenString, replacement: 'equals', spoken: true };
-        //     } else if (tokenString === '"' || tokenString === ';') {
-        //         return { text: tokenString, replacement: null, spoken: false };
-        //     } else {
-        //         return { text: tokenString, replacement: null, spoken: true };
-        //     }
-        // });
-        //
-        // return result;
     }
 }
 
